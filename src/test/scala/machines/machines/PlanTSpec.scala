@@ -7,9 +7,9 @@ import org.scalatest.FlatSpec
 
 class PlanTSpec extends FlatSpec {
   it should "be stack-safe" in {
-    def inf: PlanT[Id, Is[Int, ?], String, Unit] =
+    def inf[F[_]]: PlanT[F, Is[Int, ?], String, Unit] =
       PlanT.await
-        .flatMap { x: Int => PlanT.emit[Id, Is[Int, ?], String](x.toString) }
+        .flatMap { x: Int => PlanT.emit[F, Is[Int, ?], String](x.toString) }
         .flatMap { _ => inf }
 
     def done[A] = (_: A) => ()
@@ -22,6 +22,6 @@ class PlanTSpec extends FlatSpec {
     }
     val stop: Id[Unit] = ()
 
-    inf(done, emit, await, stop)
+    inf[Id](done, emit, await, stop)
   }
 }

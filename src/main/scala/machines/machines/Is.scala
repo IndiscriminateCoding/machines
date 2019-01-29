@@ -2,6 +2,7 @@ package machines.machines
 
 import cats.arrow.Category
 
+/* TODO: use cats.evidence instead? */
 sealed trait Is[A, B] {
   def lr(a: A): B
   def rl(b: B): A

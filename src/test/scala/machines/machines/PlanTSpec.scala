@@ -36,11 +36,11 @@ class PlanTSpec extends FlatSpec {
   "Plan" should "be stack-safe" in {
     def loop[F[_]](await: F[Int], threshold: Int)(implicit F: Monad[F]): Plan[F, String, Unit] =
       Plan.awaits[F, String, Int](await)
-      .flatMap[Unit] {
-        case n if n < threshold => Plan.emit[F, String](n.toString)
-        case _ => Plan.stop
-      }
-      .flatMap(_ => loop(await, threshold))
+        .flatMap[Unit] {
+          case n if n < threshold => Plan.emit[F, String](n.toString)
+          case _ => Plan.stop
+        }
+        .flatMap(_ => loop(await, threshold))
 
     def done[A] = (_: A) => Eval.now(())
     val emit: (String, Eval[Unit]) => Eval[Unit] = {

@@ -7,10 +7,13 @@ import org.scalatest.FlatSpec
 
 class PlanTSpec extends FlatSpec {
   it should "be stack-safe" in {
-    def loop[F[_]](implicit F: Monad[F]): PlanT[F, Is[Int, ?], String, Unit] =
+    def loop[F[_]](threshold: Int)(implicit F: Monad[F]): PlanT[F, Is[Int, ?], String, Unit] =
       PlanT.await[F, Is, String, Int]
-        .flatMap { x: Int => PlanT.emit[F, Is[Int, ?], String](x.toString) }
-        .flatMap { _ => loop(F) }
+        .flatMap {
+          case n if n < threshold => PlanT.emit[F, Is[Int, ?], String](n.toString)
+          case _ => PlanT.stop[F, Is[Int, ?], String, Unit]
+        }
+        .flatMap { _ => loop(threshold)(F) }
         .shift
 
     def done[A] = (_: A) => Eval.now(())
@@ -27,6 +30,6 @@ class PlanTSpec extends FlatSpec {
     }
     val stop: Eval[Unit] = Eval.now(())
 
-    loop[Eval](implicitly[Monad[Eval]])(done, emit, await, stop).value
+    loop[Eval](1000 * 1000)(implicitly[Monad[Eval]])(done, emit, await, stop).value
   }
 }

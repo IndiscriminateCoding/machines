@@ -7,21 +7,26 @@ import org.scalatest.FlatSpec
 
 class PlanTSpec extends FlatSpec {
   it should "be stack-safe" in {
-    def inf[F[_]]: PlanT[F, Is[Int, ?], String, Unit] =
-      PlanT.await
+    def loop[F[_]](implicit F: Monad[F]): PlanT[F, Is[Int, ?], String, Unit] =
+      PlanT.await[F, Is, String, Int]
         .flatMap { x: Int => PlanT.emit[F, Is[Int, ?], String](x.toString) }
-        .flatMap { _ => inf }
+        .flatMap { _ => loop(F) }
+        .shift
 
-    def done[A] = (_: A) => ()
+    def done[A] = (_: A) => Eval.now(())
 
-    val emit: (String, Id[Unit]) => Id[Unit] = {
-      case (s, _) => println(s)
+    val emit: (String, Eval[Unit]) => Eval[Unit] = {
+      case (s, e) => Eval.always(System.err.println(s)).flatMap(_ => e)
     }
-    val await = new Await[Id, Is[Int, ?], Unit] {
-      def apply[Z](e: Z => Id[Unit], k: Is[Int, Z], f: Id[Unit]): Id[Unit] = e(k lr 1)
+    var cnt = 0
+    val await = new Await[Eval, Is[Int, ?], Unit] {
+      def apply[Z](e: Z => Eval[Unit], k: Is[Int, Z], f: Eval[Unit]): Eval[Unit] = {
+        cnt += 1
+        e(k lr cnt)
+      }
     }
-    val stop: Id[Unit] = ()
+    val stop: Eval[Unit] = Eval.now(())
 
-    inf[Id](done, emit, await, stop)
+    loop[Eval](implicitly[Monad[Eval]])(done, emit, await, stop).value
   }
 }

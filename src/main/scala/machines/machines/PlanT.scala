@@ -22,6 +22,11 @@ trait PlanT[F[_], K[_], O, A] { outer =>
     def apply[R](d: B => F[R], e: (O, F[R]) => F[R], a: Await[F, K, R], s: F[R]): F[R] =
       outer(x => f(x)(d, e, a, s), e, a, s)
   }
+
+  def shift(implicit F: Monad[F]): PlanT[F, K, O, A] = new PlanT[F, K, O, A] {
+    def apply[R](d: A => F[R], e: (O, F[R]) => F[R], a: Await[F, K, R], s: F[R]): F[R] =
+      F.flatMap(F.pure(d))((d: A => F[R]) => outer(d, e, a, s))
+  }
 }
 
 object PlanT {

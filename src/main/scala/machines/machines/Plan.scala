@@ -37,9 +37,12 @@ object Plan {
 
   def awaits[F[_], O, A](f: F[A]): Plan[F, O, A] = new Plan[F, O, A] {
     def apply[R](done: A => R, emit: (O, R) => R, await: Await[F, R], stop: R): R =
-      await.apply(f, done, stop)
+      await(f, done, stop)
   }
 
   def await[K[_, _], O, A](implicit K: Category[K]): Plan[K[A, ?], O, A] =
     awaits[K[A, ?], O, A](K.id)
+
+  def lift[F[_], E[_], O, R](eff: E[R])(implicit E: Effectful[E, F]): Plan[F, O, R] =
+    awaits(E(eff))
 }

@@ -6,27 +6,32 @@ import org.scalatest.FlatSpec
 
 class PlanSpec extends FlatSpec {
   it should "be stack-safe" in {
-    def loop[F[_]](threshold: Int)(implicit F: Monad[F]): Plan[Int Is ?, F, String, Unit] =
-      Plan.awaits[Int Is ?, F, String, Int](Is.refl)
+    def loop(threshold: Int): Plan[? Is Int, Id, String, Unit] =
+      Plan.awaits[? Is Int, Id, String, Int](Is.refl)
         .flatMap[Unit] {
-          case n if n < threshold => Plan.emit[Int Is ?, F, String](n.toString)
-          case _ => Plan.stop[Int Is ?, F, String, Unit]
+          case n if n < threshold => Plan.emit[? Is Int, Id, String](n.toString)
+          case _ => Plan.stop[? Is Int, Id, String, Unit]
         }
-        .flatMap(_ => loop(threshold)(F))
+        .flatMap(_ => Plan.shift[? Is Int, Id, String])
+        .flatMap(_ => loop(threshold))
 
-    def done[A] = (_: A) => Eval.now(())
+    def done[A] = (_: A) => Eval.Unit
     val emit: (String, Eval[Unit]) => Eval[Unit] = {
       case (s, e) => Eval.always(System.err.println(s)).flatMap(_ => e)
     }
     var cnt = 0
-    val await = new Plan.Await[Int Is ?, Eval[Unit]] {
-      def apply[Z](z: Is[Int, Z], e: Z => Eval[Unit], f: Eval[Unit]): Eval[Unit] = {
+    val await = new Plan.Await[? Is Int, Id, Eval[Unit]] {
+      def await[Z](z: Z Is Int, e: Z => Eval[Unit], f: Eval[Unit]): Eval[Unit] = {
         cnt += 1
-        e(z coerce cnt)
+        e(z.flip coerce cnt)
       }
-    }
-    val stop: Eval[Unit] = Eval.Unit
 
-    loop[Eval](1000 * 1000).apply(done, emit, await, stop).value
+      def effect[Z](z: Id[Z], e: Z => Eval[Unit]): Eval[Unit] = e(z)
+
+      def eval[Z](z: Eval[Z], e: Z => Eval[Unit]): Eval[Unit] = z flatMap e
+    }
+    val stop = Eval.Unit
+
+    loop(1000 * 1000).apply(done, emit, await, stop).value
   }
 }

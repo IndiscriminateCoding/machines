@@ -1,8 +1,11 @@
 organization := "machines"
 name := "machines"
 scalaVersion := "2.12.8"
-scalacOptions += "-language:higherKinds"
-version := "0.0.4"
+scalacOptions ++= Seq(
+  "-language:higherKinds",
+  "-Ypartial-unification"
+)
+version := "0.0.1"
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")

@@ -37,10 +37,10 @@ class PlanSpec extends FlatSpec {
   }
 
   it should "be stack-safe on long Emit-only chains with Plan.shift" in {
-    def emit(from: Int): Plan[Int Is ?, Id, String, Unit] = (from match {
-      case n if n > 0 => Plan.emit[Int Is ?, Id, String](n.toString)
-      case _ => Plan.stop[Int Is ?, Id, String, Unit]
-    })
+    def emit(from: Int): Plan[Int Is ?, Id, String, Unit] = ((from match {
+      case n if n > 0 => Plan.emit(n.toString)
+      case _ => Plan.stop
+    }) : Plan[Int Is ?, Id, String, Unit])
     .flatMap(_ => Plan.shift)
     .flatMap(_ => emit(from - 1))
 

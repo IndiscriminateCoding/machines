@@ -1,4 +1,4 @@
-package machines.machines.plan
+package machines.machines
 
 import cats._
 import cats.evidence.Is

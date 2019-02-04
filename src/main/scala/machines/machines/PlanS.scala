@@ -1,4 +1,4 @@
-package machines.machines.plan
+package machines.machines
 
 import cats.Eval
 
@@ -17,7 +17,7 @@ trait PlanS[K[_], F[_], O, A, R] {
 }
 
 object PlanS {
-  private[plan] sealed abstract class OverrideDone[K[_], F[_], O, A, B, R](
+  private[machines] sealed abstract class OverrideDone[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R]
   ) extends PlanS[K, F, O, A, R] {
     def emit(o: O, r: R): R = p.emit(o, r)
@@ -31,14 +31,14 @@ object PlanS {
     def stop: R = p.stop
   }
 
-  private[plan] final class Map[K[_], F[_], O, A, B, R](
+  private[machines] final class Map[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R],
     f: A => B
   ) extends OverrideDone[K, F, O, A, B, R](p) {
     def done(a: A): R = p done f(a)
   }
 
-  private[plan] final class FlatMap[K[_], F[_], O, A, B, R](
+  private[machines] final class FlatMap[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R],
     f: A => Plan[K, F, O, B]
   ) extends OverrideDone[K, F, O, A, B, R](p) {

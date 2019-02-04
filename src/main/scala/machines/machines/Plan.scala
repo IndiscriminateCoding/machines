@@ -13,6 +13,10 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
   def flatMap[B](f: A => Plan[K, F, O, B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.FlatMap(s, f))
   }
+
+  def liftMap[B](f: A => F[B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
+    def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.LiftMap(s, f))
+  }
 }
 
 object Plan {

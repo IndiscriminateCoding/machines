@@ -44,4 +44,11 @@ object PlanS {
   ) extends OverrideDone[K, F, O, A, B, R](p) {
     def done(a: A): R = f(a)(p)
   }
+
+  private[machines] final class LiftMap[K[_], F[_], O, A, B, R](
+    p: PlanS[K, F, O, B, R],
+    f: A => F[B]
+  ) extends OverrideDone[K, F, O, A, B, R](p) {
+    def done(a: A): R = p.effect(f(a), p.done)
+  }
 }

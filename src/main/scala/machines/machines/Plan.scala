@@ -3,7 +3,6 @@ package machines.machines
 import cats.Applicative
 import cats.arrow.Category
 import machines.machines.Machine._
-import machines.machines
 
 sealed trait Plan[K[_], F[_], O, A] { outer =>
   def apply[R](sym: PlanS[K, F, O, A, R]): R

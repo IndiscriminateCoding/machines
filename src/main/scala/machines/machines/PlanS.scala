@@ -51,4 +51,11 @@ object PlanS {
   ) extends OverrideDone[K, F, O, A, B, R](p) {
     def done(a: A): R = p.effect(f(a), p.done)
   }
+
+  private[machines] final class EvalMap[K[_], F[_], O, A, B, R](
+    p: PlanS[K, F, O, B, R],
+    f: A => Eval[B]
+  ) extends OverrideDone[K, F, O, A, B, R](p) {
+    def done(a: A): R = p.eval(f(a), p.done)
+  }
 }

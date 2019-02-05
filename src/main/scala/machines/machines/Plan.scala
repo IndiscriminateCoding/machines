@@ -17,6 +17,12 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
   def liftMap[B](f: A => F[B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.LiftMap(s, f))
   }
+
+  def evalMap[B](f: A => Eval[B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
+    def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.EvalMap(s, f))
+  }
+
+  def shift: Plan[K, F, O, A] = evalMap(Eval.now)
 }
 
 object Plan {
@@ -39,7 +45,7 @@ object Plan {
   def await[K[_, _], F[_], O, A](implicit K: Category[K]): Plan[K[A, ?], F, O, A] =
     awaits[K[A, ?], F, O, A](K.id)
 
-  def fromEval[K[_], F[_], O, A](e: Eval[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
+  def eval[K[_], F[_], O, A](e: Eval[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
     def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.eval(e, sym.done)
   }
 
@@ -47,5 +53,5 @@ object Plan {
     def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.effect(eff, sym.done)
   }
 
-  def shift[K[_], F[_], O]: Plan[K, F, O, Unit] = fromEval(Eval.Unit)
+  def shift[K[_], F[_], O]: Plan[K, F, O, Unit] = eval(Eval.Unit)
 }

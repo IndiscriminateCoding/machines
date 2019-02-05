@@ -41,7 +41,8 @@ class PlanSpec extends FlatSpec {
       case n if n > 0 => Plan.emit(n.toString)
       case _ => Plan.stop
     }) : Plan[Int Is ?, Id, String, Unit])
-    .flatMap(_ => Plan.shift)
+    //.flatMap(_ => Plan.shift)
+    .shift
     .flatMap(_ => emit(from - 1))
 
     emit(1000 * 1000)(sym).value

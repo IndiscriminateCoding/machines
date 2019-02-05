@@ -1,7 +1,9 @@
 package machines.machines
 
-import cats.Eval
+import cats.Applicative
 import cats.arrow.Category
+import machines.machines.Machine._
+import machines.machines
 
 sealed trait Plan[K[_], F[_], O, A] { outer =>
   def apply[R](sym: PlanS[K, F, O, A, R]): R
@@ -18,11 +20,11 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.LiftMap(s, f))
   }
 
-  def evalMap[B](f: A => Eval[B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
-    def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.EvalMap(s, f))
-  }
+  def shift(implicit F: Applicative[F]): Plan[K, F, O, A] = liftMap(F.pure)
 
-  def shift: Plan[K, F, O, A] = evalMap(Eval.now)
+  def construct: Machine[K, F, O] = apply(new PlanS.Construct(Stop()))
+
+  def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(repeatedly))
 }
 
 object Plan {
@@ -45,13 +47,7 @@ object Plan {
   def await[K[_, _], F[_], O, A](implicit K: Category[K]): Plan[K[A, ?], F, O, A] =
     awaits[K[A, ?], F, O, A](K.id)
 
-  def eval[K[_], F[_], O, A](e: Eval[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
-    def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.eval(e, sym.done)
-  }
-
   def lift[K[_], F[_], O, A](eff: F[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
     def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.effect(eff, sym.done)
   }
-
-  def shift[K[_], F[_], O]: Plan[K, F, O, Unit] = eval(Eval.Unit)
 }

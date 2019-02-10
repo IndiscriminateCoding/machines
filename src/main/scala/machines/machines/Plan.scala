@@ -5,7 +5,7 @@ import cats.arrow.Category
 import machines.machines.Machine._
 
 sealed trait Plan[K[_], F[_], O, A] { outer =>
-  def apply[R](sym: PlanS[K, F, O, A, R]): R
+  private[machines] def apply[R](sym: PlanS[K, F, O, A, R]): R
 
   def map[B](f: A => B): Plan[K, F, O, B] = new Plan[K, F, O, B] {
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.Map(s, f))
@@ -21,7 +21,7 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
 
   def shift(implicit F: Applicative[F]): Plan[K, F, O, A] = liftMap(F.pure)
 
-  def construct: Machine[K, F, O] = apply(new PlanS.Construct(Stop()))
+  def construct: Machine[K, F, O] = apply(new PlanS.Construct(new Stop))
 
   def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(repeatedly))
 }

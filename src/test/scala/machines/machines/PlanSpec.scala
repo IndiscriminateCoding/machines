@@ -5,7 +5,7 @@ import cats.evidence.Is
 import org.scalatest.FlatSpec
 
 class PlanSpec extends FlatSpec {
-  it should "produce stack-safe Machine using shift" ignore {
+  it should "produce stack-safe Machine using shift" in {
     def emit(from: Int): Plan[Int Is ?, Eval, String, Unit] = ((from match {
       case n if n > 0 => Plan.emit(n.toString)
       case _ => Plan.stop
@@ -27,13 +27,13 @@ class PlanSpec extends FlatSpec {
     })
 
     val plan: Plan[Int Is ?, Eval, String, Unit] = act flatMap {
-      case n if n < 1000 * 1000 * 10 => Plan.emit(n.toString)
+      case n if n < 1000 * 1000 => Plan.emit(n.toString)
       case _ => Plan.stop
     }
 
     plan
       .repeatedly
-      .run(s => Eval.always(()))
+      .run(s => Eval.always(System.err.println(s)))
       .value
   }
 }

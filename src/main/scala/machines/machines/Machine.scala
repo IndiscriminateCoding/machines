@@ -7,11 +7,11 @@ sealed trait Machine[K[_], F[_], O] {
 }
 
 object Machine {
-  private[machines] case class Stop[K[_], F[_], O]() extends Machine[K, F, O] {
+  private[machines] class Stop[K[_], F[_], O] extends Machine[K, F, O] {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.unit
   }
 
-  private[machines] case class Emit[K[_], F[_], O](h: O, t: Machine[K, F, O])
+  private[machines] class Emit[K[_], F[_], O](h: O, t: Machine[K, F, O])
     extends Machine[K, F, O] {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.flatMap(f(h))(_ => t.run(f))
   }

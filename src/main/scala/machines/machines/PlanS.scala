@@ -48,6 +48,15 @@ private[machines] object PlanS {
     def done(a: A): R = p.effect(f(a), p.done)
   }
 
+  final class Combine[K[_], F[_], O, A, R](
+    s: PlanS[K, F, O, A, R],
+    p: Plan[K, F, O, A]
+  ) extends OverrideDone[K, F, O, A, A, R](s) {
+    def done(a: A): R = s.done(a)
+
+    override def stop: R = p(s)
+  }
+
   final class Construct[K[_], F[_], O, A](
     tail: => Machine[K, F, O]
   ) extends PlanS[K, F, O, A, Machine[K, F, O]] {

@@ -1,6 +1,6 @@
 package machines.machines
 
-import cats.Applicative
+import cats._
 import cats.arrow.Category
 import machines.machines.Machine._
 
@@ -21,6 +21,10 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
 
   def shift(implicit F: Applicative[F]): Plan[K, F, O, A] = liftMap(F.pure)
 
+  def combine(p: Plan[K, F, O, A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
+    def apply[R](s: PlanS[K, F, O, A, R]): R = outer(new PlanS.Combine(s, p))
+  }
+
   def construct: Machine[K, F, O] = apply(new PlanS.Construct(new Stop))
 
   def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(repeatedly))
@@ -39,6 +43,9 @@ object Plan {
     def apply[R](sym: PlanS[K, F, O, Unit, R]): R = sym.emit(x, sym.done(()))
   }
 
+  def emitOption[K[_], F[_], O](x: Option[O]): Plan[K, F, O, Unit] =
+    x.fold[Plan[K, F, O, Unit]](stop)(emit)
+
   def awaits[K[_], F[_], O, A](f: K[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
     def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.await(f, sym.done, sym.stop)
   }
@@ -49,4 +56,9 @@ object Plan {
   def lift[K[_], F[_], O, A](eff: F[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
     def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.effect(eff, sym.done)
   }
+
+  def exhaust[K[_], F[_], O](f: F[Option[O]])(implicit F: Monad[F]): Plan[K, F, O, Unit] =
+    lift[K, F, O, Option[O]](f)
+      .flatMap(emitOption)
+      .flatMap(_ => exhaust(f))
 }

@@ -36,4 +36,20 @@ class PlanSpec extends FlatSpec {
       .run(s => Eval.always(System.err.println(s)))
       .value
   }
+
+  it should "keep stack-safety when using exhaust" in {
+    var cnt = 0
+    val act = Eval.always {
+      cnt += 1
+      if (cnt < 1000 * 1000) Some(cnt.toString)
+      else None
+    }
+
+    val plan = Plan.exhaust[Nothing, Eval, String](act)
+
+    plan
+      .construct
+      .run(s => Eval.always(System.err.println(s)))
+      .value
+  }
 }

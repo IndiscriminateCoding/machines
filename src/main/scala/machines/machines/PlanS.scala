@@ -15,7 +15,7 @@ private[machines] trait PlanS[K[_], F[_], O, A, R] {
 }
 
 private[machines] object PlanS {
-  abstract class OverrideDone[K[_], F[_], O, A, B, R](
+  abstract class Proxy[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R]
   ) extends PlanS[K, F, O, A, R] {
     def emit(o: O, r: R): R = p.emit(o, r)
@@ -30,28 +30,28 @@ private[machines] object PlanS {
   final class Map[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R],
     f: A => B
-  ) extends OverrideDone[K, F, O, A, B, R](p) {
+  ) extends Proxy[K, F, O, A, B, R](p) {
     def done(a: A): R = p done f(a)
   }
 
   final class FlatMap[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R],
     f: A => Plan[K, F, O, B]
-  ) extends OverrideDone[K, F, O, A, B, R](p) {
+  ) extends Proxy[K, F, O, A, B, R](p) {
     def done(a: A): R = f(a)(p)
   }
 
   final class LiftMap[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R],
     f: A => F[B]
-  ) extends OverrideDone[K, F, O, A, B, R](p) {
+  ) extends Proxy[K, F, O, A, B, R](p) {
     def done(a: A): R = p.effect(f(a), p.done)
   }
 
   final class Combine[K[_], F[_], O, A, R](
     s: PlanS[K, F, O, A, R],
     p: Plan[K, F, O, A]
-  ) extends OverrideDone[K, F, O, A, A, R](s) {
+  ) extends Proxy[K, F, O, A, A, R](s) {
     def done(a: A): R = s.done(a)
 
     override def stop: R = p(s)

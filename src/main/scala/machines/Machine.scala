@@ -14,8 +14,8 @@ object Machine {
     def apply[K[_], F[_], O](): Stop[K, F, O] = new Stop
   }
 
-  class Emit[K[_], F[_], O](h: O, t: => Machine[K, F, O])
-    extends Machine[K, F, O] {
+  // TODO: replace call-by-name w/ separate Eval case?
+  class Emit[K[_], F[_], O](h: O, t: => Machine[K, F, O]) extends Machine[K, F, O] {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.flatMap(f(h))(_ => t.run(f))
   }
   object Emit {

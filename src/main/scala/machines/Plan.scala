@@ -25,7 +25,7 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
     def apply[R](s: PlanS[K, F, O, A, R]): R = outer(new PlanS.Combine(s, p))
   }
 
-  def construct: Machine[K, F, O] = apply(new PlanS.Construct(new Stop))
+  def construct: Machine[K, F, O] = apply(new PlanS.Construct(Stop()))
 
   def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(repeatedly))
 }

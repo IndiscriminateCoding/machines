@@ -39,11 +39,11 @@ object Machine {
     ): Await[K, F, O] = new Await[K, F, O] {
       type Z = E
 
-      def await: K[Z] = z
+      val await: K[Z] = z
 
       def apply(z: Z): Machine[K, F, O] = e(z)
 
-      def stop: Machine[K, F, O] = f
+      val stop: Machine[K, F, O] = f
     }
   }
 
@@ -61,7 +61,7 @@ object Machine {
       new Effect[K, F, O] {
         type Z = E
 
-        def effect: F[Z] = z
+        val effect: F[Z] = z
 
         def apply(z: Z): Machine[K, F, O] = e(z)
       }

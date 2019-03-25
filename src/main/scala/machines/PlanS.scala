@@ -1,8 +1,8 @@
-package machines.machines
+package machines
 
-import machines.machines.Machine._
+import machines.Machine._
 
-private[machines] trait PlanS[K[_], F[_], O, A, R] {
+trait PlanS[K[_], F[_], O, A, R] {
   def done(a: A): R
 
   def emit(o: O, r: R): R
@@ -14,7 +14,7 @@ private[machines] trait PlanS[K[_], F[_], O, A, R] {
   def stop: R
 }
 
-private[machines] object PlanS {
+object PlanS {
   abstract class Proxy[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R]
   ) extends PlanS[K, F, O, A, R] {
@@ -65,25 +65,10 @@ private[machines] object PlanS {
     def emit(o: O, r: Machine[K, F, O]): Machine[K, F, O] = new Emit(o, r)
 
     def await[Z1](z: K[Z1], e: Z1 => Machine[K, F, O], f: Machine[K, F, O]): Machine[K, F, O] =
-      new Await[K, F, O] {
-        type Z = Z1
+      Await(z, e, f)
 
-        def await: K[Z] = z
+    def effect[Z1](z: F[Z1], e: Z1 => Machine[K, F, O]): Machine[K, F, O] = Effect(z, e)
 
-        def apply(z: Z): Machine[K, F, O] = e(z)
-
-        def stop: Machine[K, F, O] = f
-      }
-
-    def effect[Z1](z: F[Z1], e: Z1 => Machine[K, F, O]): Machine[K, F, O] =
-      new Effect[K, F, O] {
-        type Z = Z1
-
-        def effect: F[Z] = z
-
-        def apply(z: Z): Machine[K, F, O] = e(z)
-      }
-
-    val stop: Machine[K, F, O] = new Stop
+    val stop: Machine[K, F, O] = Stop()
   }
 }

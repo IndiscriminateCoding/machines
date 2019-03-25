@@ -1,11 +1,11 @@
-package machines.machines
+package machines
 
 import cats._
 import cats.arrow.Category
-import machines.machines.Machine._
+import machines.Machine._
 
 sealed trait Plan[K[_], F[_], O, A] { outer =>
-  private[machines] def apply[R](sym: PlanS[K, F, O, A, R]): R
+  def apply[R](sym: PlanS[K, F, O, A, R]): R
 
   def map[B](f: A => B): Plan[K, F, O, B] = new Plan[K, F, O, B] {
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.Map(s, f))

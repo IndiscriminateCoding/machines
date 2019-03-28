@@ -14,7 +14,7 @@ trait PlanS[K[_], F[_], O, A, R] {
   def stop: R
 }
 
-object PlanS {
+private[machines] object PlanS {
   abstract class Proxy[K[_], F[_], O, A, B, R](
     p: PlanS[K, F, O, B, R]
   ) extends PlanS[K, F, O, A, R] {

@@ -2,6 +2,7 @@ package machines
 
 import cats._
 import cats.evidence.Is
+import cats.implicits._
 import org.scalatest.FlatSpec
 
 class PlanSpec extends FlatSpec {
@@ -18,9 +19,13 @@ class PlanSpec extends FlatSpec {
       .flatMap(_ => emit(from - 1))
 
     var res = 0
-    emit(100 * 1000 * 1000)
+    /*    emit(100 * 1000 * 1000)
+          .construct
+          .run(s => Eval.always(res += s))
+          .value */
+    emit(10 * 1000 * 1000)
       .construct
-      .run(s => Eval.always(res += s))
+      .foldMap(x => Eval.now(res += x))
       .value
     println(res)
   }

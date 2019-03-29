@@ -2,78 +2,42 @@ package machines
 
 import machines.Machine._
 
-trait PlanS[K[_], F[_], O, A, R] {
-  def done(a: A): R
+trait PlanS[K[_], F[_], O, A] {
+  def done(a: A): Machine[K, F, O]
 
-  def emit(o: O, r: R): R
-
-  def await[Z](z: K[Z], e: Z => R, f: R): R
-
-  def effect[Z](z: F[Z], e: Z => R): R
-
-  def shift(f: => R): R
-
-  def stop: R
+  def stop: Machine[K, F, O]
 }
 
 private[machines] object PlanS {
-  abstract class Proxy[K[_], F[_], O, A, B, R](
-    p: PlanS[K, F, O, B, R]
-  ) extends PlanS[K, F, O, A, R] {
-    def emit(o: O, r: R): R = p.emit(o, r)
+  final class Map[K[_], F[_], O, A, B](p: PlanS[K, F, O, B], f: A => B) extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = Shift(p done f(a))
 
-    def await[Z](z: K[Z], e: Z => R, f: R): R = p.await(z, e, f)
-
-    def effect[Z](z: F[Z], e: Z => R): R = p.effect(z, e)
-
-    def shift(f: => R): R = p.shift(f)
-
-    def stop: R = p.stop
+    def stop: Machine[K, F, O] = p.stop
   }
 
-  final class Map[K[_], F[_], O, A, B, R](
-    p: PlanS[K, F, O, B, R],
-    f: A => B
-  ) extends Proxy[K, F, O, A, B, R](p) {
-    def done(a: A): R = p done f(a)
+  final class FlatMap[K[_], F[_], O, A, B](p: PlanS[K, F, O, B], f: A => Plan[K, F, O, B])
+    extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = Shift(f(a).apply(p))
+
+    def stop: Machine[K, F, O] = p.stop
   }
 
-  final class FlatMap[K[_], F[_], O, A, B, R](
-    p: PlanS[K, F, O, B, R],
-    f: A => Plan[K, F, O, B]
-  ) extends Proxy[K, F, O, A, B, R](p) {
-    def done(a: A): R = f(a)(p)
+  final class LiftMap[K[_], F[_], O, A, B](p: PlanS[K, F, O, B], f: A => F[B])
+    extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = Effect(f(a), p.done)
+
+    def stop: Machine[K, F, O] = p.stop
   }
 
-  final class LiftMap[K[_], F[_], O, A, B, R](
-    p: PlanS[K, F, O, B, R],
-    f: A => F[B]
-  ) extends Proxy[K, F, O, A, B, R](p) {
-    def done(a: A): R = p.effect(f(a), p.done)
+  final class Combine[K[_], F[_], O, A](s: PlanS[K, F, O, A], p: Plan[K, F, O, A])
+    extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = s.done(a)
+
+    def stop: Machine[K, F, O] = Shift(p(s))
   }
 
-  final class Combine[K[_], F[_], O, A, R](
-    s: PlanS[K, F, O, A, R],
-    p: Plan[K, F, O, A]
-  ) extends Proxy[K, F, O, A, A, R](s) {
-    def done(a: A): R = s.done(a)
-
-    override def stop: R = p(s)
-  }
-
-  final class Construct[K[_], F[_], O, A](
-    tail: => Machine[K, F, O]
-  ) extends PlanS[K, F, O, A, Machine[K, F, O]] {
-    def done(a: A): Machine[K, F, O] = tail
-
-    def emit(o: O, r: Machine[K, F, O]): Machine[K, F, O] = new Emit(o, r)
-
-    def await[Z1](z: K[Z1], e: Z1 => Machine[K, F, O], f: Machine[K, F, O]): Machine[K, F, O] =
-      Await(z, e, f)
-
-    def effect[Z1](z: F[Z1], e: Z1 => Machine[K, F, O]): Machine[K, F, O] = Effect(z, e)
-
-    def shift(f: => Machine[K, F, O]): Machine[K, F, O] = Shift(f)
+  final class Construct[K[_], F[_], O, A](tail: => Machine[K, F, O]) extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = Shift(tail)
 
     val stop: Machine[K, F, O] = Stop()
   }

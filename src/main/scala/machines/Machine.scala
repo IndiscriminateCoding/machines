@@ -14,7 +14,7 @@ object Machine {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.unit
   }
   object Stop {
-    def apply[K[_], F[_], O](): Stop[K, F, O] = new Stop
+    @inline def apply[K[_], F[_], O](): Stop[K, F, O] = new Stop
   }
 
   class Emit[K[_], F[_], O](h: O, t: Machine[K, F, O]) extends Machine[K, F, O] {
@@ -23,7 +23,7 @@ object Machine {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.flatMap(f(h))(_ => t.run(f))
   }
   object Emit {
-    def apply[K[_], F[_], O](h: O, t: Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
+    @inline def apply[K[_], F[_], O](h: O, t: Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
   }
 
   trait Await[K[_], F[_], O] extends Machine[K, F, O] {
@@ -37,7 +37,7 @@ object Machine {
     final def run(g: O => F[Unit])(implicit F: Monad[F]): F[Unit] = stop.run(g)
   }
   object Await {
-    def apply[E, K[_], F[_], O](
+    @inline def apply[E, K[_], F[_], O](
       z: K[E],
       e: E => Machine[K, F, O],
       f: Machine[K, F, O]
@@ -64,7 +64,7 @@ object Machine {
       F.flatMap(effect)(z => apply(z).run(f))
   }
   object Effect {
-    def apply[E, K[_], F[_], O](z: F[E], e: E => Machine[K, F, O]): Effect[K, F, O] =
+    @inline def apply[E, K[_], F[_], O](z: F[E], e: E => Machine[K, F, O]): Effect[K, F, O] =
       new Effect[K, F, O] {
         type Z = E
 
@@ -82,6 +82,6 @@ object Machine {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = apply().run(f)
   }
   object Shift {
-    def apply[K[_], F[_], O](m: => Machine[K, F, O]): Shift[K, F, O] = () => m
+    @inline def apply[K[_], F[_], O](@inline m: => Machine[K, F, O]): Shift[K, F, O] = () => m
   }
 }

@@ -6,12 +6,11 @@ import cats.implicits._
 import org.scalatest.FlatSpec
 
 class PlanSpec extends FlatSpec {
-  it should "produce stack-safe Machine using shift" in {
+  it should "produce stack-safe Machine" in {
     def emit(from: Int): Plan[Int Is ?, Eval, Int, Unit] = ((from match {
       case n if n > 0 => Plan.emit(n + 42)
       case _ => Plan.stop
     }): Plan[Int Is ?, Eval, Int, Unit])
-      .shift
       .flatMap(Plan.pure)
       .flatMap(Plan.pure)
       .flatMap(Plan.pure)
@@ -30,7 +29,7 @@ class PlanSpec extends FlatSpec {
     println(res)
   }
 
-  it should "keep stack-safety when using repeatedly (and implicit shift)" ignore {
+  it should "keep stack-safety when using repeatedly" ignore {
     var cnt = 0
     val act = Plan.lift[Int Is ?, Eval, String, Int](Eval.always {
       cnt += 1

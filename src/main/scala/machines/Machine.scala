@@ -66,4 +66,13 @@ object Machine {
         def apply(z: Z): Machine[K, F, O] = e(z)
       }
   }
+
+  trait Shift[K[_], F[_], O] extends Machine[K, F, O] {
+    def apply(): Machine[K, F, O]
+
+    def run(g: O => F[Unit])(implicit F: Monad[F]): F[Unit] = apply().run(g)
+  }
+  object Shift {
+    def apply[K[_], F[_], O](m: => Machine[K, F, O]): Shift[K, F, O] = () => m
+  }
 }

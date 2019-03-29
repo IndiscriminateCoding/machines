@@ -19,7 +19,9 @@ sealed trait Plan[K[_], F[_], O, A] { outer =>
     def apply[R](s: PlanS[K, F, O, B, R]): R = outer(new PlanS.LiftMap(s, f))
   }
 
-  def shift(implicit F: Applicative[F]): Plan[K, F, O, A] = liftMap(F.pure)
+  def shift: Plan[K, F, O, A] = new Plan[K, F, O, A] {
+    def apply[R](sym: PlanS[K, F, O, A, R]): R = sym.shift(outer(sym))
+  }
 
   def combine(p: Plan[K, F, O, A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
     def apply[R](s: PlanS[K, F, O, A, R]): R = outer(new PlanS.Combine(s, p))

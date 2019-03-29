@@ -11,6 +11,8 @@ trait PlanS[K[_], F[_], O, A, R] {
 
   def effect[Z](z: F[Z], e: Z => R): R
 
+  def shift(f: => R): R
+
   def stop: R
 }
 
@@ -23,6 +25,8 @@ private[machines] object PlanS {
     def await[Z](z: K[Z], e: Z => R, f: R): R = p.await(z, e, f)
 
     def effect[Z](z: F[Z], e: Z => R): R = p.effect(z, e)
+
+    def shift(f: => R): R = p.shift(f)
 
     def stop: R = p.stop
   }
@@ -68,6 +72,8 @@ private[machines] object PlanS {
       Await(z, e, f)
 
     def effect[Z1](z: F[Z1], e: Z1 => Machine[K, F, O]): Machine[K, F, O] = Effect(z, e)
+
+    def shift(f: => Machine[K, F, O]): Machine[K, F, O] = Shift(f)
 
     val stop: Machine[K, F, O] = Stop()
   }

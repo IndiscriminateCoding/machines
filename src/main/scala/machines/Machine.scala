@@ -14,12 +14,11 @@ object Machine {
     def apply[K[_], F[_], O](): Stop[K, F, O] = new Stop
   }
 
-  // TODO: replace call-by-name w/ separate Eval case?
-  class Emit[K[_], F[_], O](h: O, t: => Machine[K, F, O]) extends Machine[K, F, O] {
+  class Emit[K[_], F[_], O](h: O, t: Machine[K, F, O]) extends Machine[K, F, O] {
     final def run(f: O => F[Unit])(implicit F: Monad[F]): F[Unit] = F.flatMap(f(h))(_ => t.run(f))
   }
   object Emit {
-    def apply[K[_], F[_], O](h: O, t: => Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
+    def apply[K[_], F[_], O](h: O, t: Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
   }
 
   trait Await[K[_], F[_], O] extends Machine[K, F, O] {

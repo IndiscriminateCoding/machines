@@ -8,7 +8,7 @@ import org.scalatest.FlatSpec
 class MachineSpec extends FlatSpec {
   it should "allow recursion when constructing Machines" in {
     def stream[F[_], K[_]]: Machine[K, F, Option[Int]] =
-      Emit(Some(1), Emit(None, stream))
+      Emit(Some(1), Emit(None, Shift(stream)))
 
     stream[Eval, Int Is ?].run(s => Eval.always(println(s))).value
   }

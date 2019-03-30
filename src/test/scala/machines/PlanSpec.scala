@@ -2,7 +2,6 @@ package machines
 
 import cats._
 import cats.evidence.Is
-import cats.implicits._
 import org.scalatest.FlatSpec
 
 class PlanSpec extends FlatSpec {
@@ -17,19 +16,19 @@ class PlanSpec extends FlatSpec {
       .flatMap(Plan.pure)
       .flatMap(_ => emit(from - 1))
 
+    val machine = emit(1000 * 1000).construct
     var res = 0
-    /*    emit(100 * 1000 * 1000)
-          .construct
-          .run(s => Eval.always(res += s))
-          .value */
-    emit(10 * 1000 * 1000)
-      .construct
-      .foldMap(x => Eval.now(res += x))
+    res = machine
+      .foldLeft(0)((a, n) => n + a)
+      .value
+    machine
+      .map { o => res += o }
+      .run_
       .value
     println(res)
   }
 
-  it should "keep stack-safety when using repeatedly" ignore {
+  it should "keep stack-safety when using repeatedly" in {
     var cnt = 0
     val act = Plan.lift[Int Is ?, Eval, String, Int](Eval.always {
       cnt += 1
@@ -43,11 +42,12 @@ class PlanSpec extends FlatSpec {
 
     plan
       .repeatedly
-      .run(s => Eval.always(System.err.println(s)))
+      .map(s => Eval.always(System.err.println(s)))
+      .run_
       .value
   }
 
-  it should "keep stack-safety when using exhaust" ignore {
+  it should "keep stack-safety when using exhaust" in {
     var cnt = 0
     val act = Eval.always {
       cnt += 1
@@ -59,7 +59,8 @@ class PlanSpec extends FlatSpec {
 
     plan
       .construct
-      .run(s => Eval.always(System.err.println(s)))
+      .map(s => Eval.always(System.err.println(s)))
+      .run_
       .value
   }
 }

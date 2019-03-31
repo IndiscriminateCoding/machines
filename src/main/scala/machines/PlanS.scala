@@ -2,7 +2,7 @@ package machines
 
 import machines.Machine._
 
-trait PlanS[K[_], F[_], O, A] {
+private[machines] sealed trait PlanS[+K[_], +F[_], +O, -A] {
   def done(a: A): Machine[K, F, O]
 
   def stop: Machine[K, F, O]
@@ -39,6 +39,6 @@ private[machines] object PlanS {
   final class Construct[K[_], F[_], O, A](tail: => Machine[K, F, O]) extends PlanS[K, F, O, A] {
     def done(a: A): Machine[K, F, O] = Shift(tail)
 
-    val stop: Machine[K, F, O] = Stop()
+    val stop: Machine[K, F, O] = Stop
   }
 }

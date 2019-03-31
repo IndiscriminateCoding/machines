@@ -9,7 +9,7 @@ class MachineSpec extends FlatSpec {
   it should "allow recursion when constructing Machines" in {
     def stream[F[_], K[_]](n: Int): Machine[K, F, Option[Int]] =
       if (n > 0) Emit(Some(1), Emit(None, Shift(stream(n - 1))))
-      else Stop()
+      else Stop
 
     stream[Eval, Int Is ?](1000 * 1000)
       .map(x => Eval.always(println(x)))

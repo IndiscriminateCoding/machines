@@ -1,6 +1,5 @@
 package machines
 
-import cats._
 import cats.arrow.Category
 import machines.Machine._
 
@@ -66,7 +65,7 @@ object Plan {
       Effect(eff, s.done)
   }
 
-  def exhaust[K[_], F[_], O](f: F[Option[O]])(implicit F: Monad[F]): Plan[K, F, O, Unit] =
+  def exhaust[K[_], F[_], O](f: F[Option[O]]): Plan[K, F, O, Unit] =
     lift[K, F, O, Option[O]](f)
       .flatMap(emitOption)
       .flatMap(_ => exhaust(f))

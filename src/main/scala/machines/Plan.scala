@@ -35,7 +35,7 @@ object Plan {
     }
   }
 
-  def stop: Plan[Nothing, Nothing, Nothing, Nothing] =
+  val stop: Plan[Nothing, Nothing, Nothing, Nothing] =
     new Plan[Nothing, Nothing, Nothing, Nothing] {
       def apply[N[a] >: Nothing, G[a] >: Nothing, E >: Nothing](
         s: PlanS[N, G, E, Nothing]

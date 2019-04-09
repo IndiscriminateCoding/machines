@@ -35,38 +35,42 @@ object Plan {
     }
   }
 
-  def stop[K[_], F[_], O, A]: Plan[K, F, O, A] = new Plan[K, F, O, A] {
-    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E] = s.stop
+  def stop: Plan[Nothing, Nothing, Nothing, Nothing] =
+    new Plan[Nothing, Nothing, Nothing, Nothing] {
+      def apply[N[a] >: Nothing, G[a] >: Nothing, E >: Nothing](
+        s: PlanS[N, G, E, Nothing]
+      ): Machine[N, G, E] = s.stop
+    }
+
+  def pure[A](a: A): Plan[Nothing, Nothing, Nothing, A] = new Plan[Nothing, Nothing, Nothing, A] {
+    def apply[N[a] >: Nothing, G[a] >: Nothing, E >: Nothing](
+      s: PlanS[N, G, E, A]
+    ): Machine[N, G, E] = s.done(a)
   }
 
-  def pure[K[_], F[_], O, A](a: A): Plan[K, F, O, A] = new Plan[K, F, O, A] {
-    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E] =
-      s.done(a)
+  def emit[O](x: O): Plan[Nothing, Nothing, O, Unit] = new Plan[Nothing, Nothing, O, Unit] {
+    def apply[N[a] >: Nothing, G[a] >: Nothing, E >: O](
+      s: PlanS[N, G, E, Unit]
+    ): Machine[N, G, E] = Emit(x, s.done(()))
   }
 
-  def emit[K[_], F[_], O](x: O): Plan[K, F, O, Unit] = new Plan[K, F, O, Unit] {
-    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, Unit]): Machine[N, G, E] =
-      Emit(x, s.done(()))
-  }
+  def emitOption[O](x: Option[O]): Plan[Nothing, Nothing, O, Unit] =
+    x.fold[Plan[Nothing, Nothing, O, Unit]](stop)(emit)
 
-  def emitOption[K[_], F[_], O](x: Option[O]): Plan[K, F, O, Unit] =
-    x.fold[Plan[K, F, O, Unit]](stop)(emit)
-
-  def awaits[K[_], F[_], O, A](f: K[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
-    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E] =
+  def awaits[K[_], A](f: K[A]): Plan[K, Nothing, Nothing, A] = new Plan[K, Nothing, Nothing, A] {
+    def apply[N[a] >: K[a], G[a] >: Nothing, E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
       Await(f, s.done, s.stop)
   }
 
-  def await[K[_, _], F[_], O, A](implicit K: Category[K]): Plan[K[A, ?], F, O, A] =
-    awaits[K[A, ?], F, O, A](K.id)
+  def await[K[_, _], A](implicit K: Category[K]): Plan[K[A, ?], Nothing, Nothing, A] = awaits(K.id)
 
-  def lift[K[_], F[_], O, A](eff: F[A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
-    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E] =
+  def lift[F[_], A](eff: F[A]): Plan[Nothing, F, Nothing, A] = new Plan[Nothing, F, Nothing, A] {
+    def apply[N[a] >: Nothing, G[a] >: F[a], E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
       Effect(eff, s.done)
   }
 
-  def exhaust[K[_], F[_], O](f: F[Option[O]]): Plan[K, F, O, Unit] =
-    lift[K, F, O, Option[O]](f)
+  def exhaust[F[_], O](f: F[Option[O]]): Plan[Nothing, F, O, Nothing] =
+    lift(f)
       .flatMap(emitOption)
       .flatMap(_ => exhaust(f))
 }

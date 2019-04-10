@@ -10,7 +10,7 @@ private[machines] sealed trait PlanS[+K[_], +F[_], +O, -A] {
 
 private[machines] object PlanS {
   final class Map[K[_], F[_], O, A, B](p: PlanS[K, F, O, B], f: A => B) extends PlanS[K, F, O, A] {
-    def done(a: A): Machine[K, F, O] = Shift(p done f(a))
+    def done(a: A): Machine[K, F, O] = p done f(a)
 
     def stop: Machine[K, F, O] = p.stop
   }

@@ -33,7 +33,7 @@ private[machines] object PlanS {
     extends PlanS[K, F, O, A] {
     def done(a: A): Machine[K, F, O] = s.done(a)
 
-    def stop: Machine[K, F, O] = Shift(p(s))
+    val stop: Machine[K, F, O] = Shift(p(s))
   }
 
   final class Construct[K[_], F[_], O, A](tail: => Machine[K, F, O]) extends PlanS[K, F, O, A] {

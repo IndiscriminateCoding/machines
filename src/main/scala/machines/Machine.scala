@@ -64,7 +64,9 @@ object Machine {
     type Z
 
     def await: K[Z]
+
     def apply(z: Z): Machine[K, F, O]
+
     def stop: Machine[K, F, O]
   }
   object Await {
@@ -86,6 +88,7 @@ object Machine {
     type Z
 
     def effect: F[Z]
+
     def apply(z: Z): Machine[K, F, O]
   }
   object Effect {

@@ -13,7 +13,7 @@ sealed trait Plan[+K[_], +F[_], +O, +A] {
 }
 
 object Plan {
-  implicit class RichPlan[K[_], F[_], O, A](private val self: Plan[K, F, O, A]) extends AnyVal {
+  implicit class PlanOps[K[_], F[_], O, A](private val self: Plan[K, F, O, A]) extends AnyVal {
     def map[B](f: A => B): Plan[K, F, O, B] = new Plan[K, F, O, B] {
       def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, B]): Machine[N, G, E] =
         self(new PlanS.Map(s, f))

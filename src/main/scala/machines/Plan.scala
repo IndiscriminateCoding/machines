@@ -37,19 +37,19 @@ object Plan {
 
   val stop: Plan[Nothing, Nothing, Nothing, Nothing] =
     new Plan[Nothing, Nothing, Nothing, Nothing] {
-      def apply[N[a] >: Nothing, G[a] >: Nothing, E >: Nothing](
+      def apply[N[_] >: Nothing, G[_] >: Nothing, E >: Nothing](
         s: PlanS[N, G, E, Nothing]
       ): Machine[N, G, E] = s.stop
     }
 
   def pure[A](a: A): Plan[Nothing, Nothing, Nothing, A] = new Plan[Nothing, Nothing, Nothing, A] {
-    def apply[N[a] >: Nothing, G[a] >: Nothing, E >: Nothing](
+    def apply[N[_] >: Nothing, G[_] >: Nothing, E >: Nothing](
       s: PlanS[N, G, E, A]
     ): Machine[N, G, E] = s.done(a)
   }
 
   def emit[O](x: O): Plan[Nothing, Nothing, O, Unit] = new Plan[Nothing, Nothing, O, Unit] {
-    def apply[N[a] >: Nothing, G[a] >: Nothing, E >: O](
+    def apply[N[_] >: Nothing, G[_] >: Nothing, E >: O](
       s: PlanS[N, G, E, Unit]
     ): Machine[N, G, E] = Emit(x, s.done(()))
   }
@@ -58,14 +58,14 @@ object Plan {
     x.fold[Plan[Nothing, Nothing, O, Unit]](stop)(emit)
 
   def awaits[K[_], A](f: K[A]): Plan[K, Nothing, Nothing, A] = new Plan[K, Nothing, Nothing, A] {
-    def apply[N[a] >: K[a], G[a] >: Nothing, E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
+    def apply[N[a] >: K[a], G[_] >: Nothing, E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
       Await(f, s.done, s.stop)
   }
 
   def await[K[_, _], A](implicit K: Category[K]): Plan[K[A, ?], Nothing, Nothing, A] = awaits(K.id)
 
   def lift[F[_], A](eff: F[A]): Plan[Nothing, F, Nothing, A] = new Plan[Nothing, F, Nothing, A] {
-    def apply[N[a] >: Nothing, G[a] >: F[a], E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
+    def apply[N[_] >: Nothing, G[a] >: F[a], E >: Nothing](s: PlanS[N, G, E, A]): Machine[N, G, E] =
       Effect(eff, s.done)
   }
 

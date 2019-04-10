@@ -3,9 +3,14 @@ package machines
 import cats.arrow.Category
 import machines.Machine._
 
-sealed trait Plan[+K[_], +F[_], +O, +A] {
+sealed trait Plan[+K[_], +F[_], +O, +A] { self =>
   private[machines]
   def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E]
+
+  final def map[B](f: A => B): Plan[K, F, O, B] = new Plan[K, F, O, B] {
+    def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, B]): Machine[N, G, E] =
+      self(new PlanS.Map(s, f))
+  }
 
   final def construct: Machine[K, F, O] = apply(new PlanS.Construct(Stop))
 
@@ -14,11 +19,6 @@ sealed trait Plan[+K[_], +F[_], +O, +A] {
 
 object Plan {
   implicit class PlanOps[K[_], F[_], O, A](private val self: Plan[K, F, O, A]) extends AnyVal {
-    def map[B](f: A => B): Plan[K, F, O, B] = new Plan[K, F, O, B] {
-      def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, B]): Machine[N, G, E] =
-        self(new PlanS.Map(s, f))
-    }
-
     def flatMap[B](f: A => Plan[K, F, O, B]): Plan[K, F, O, B] = new Plan[K, F, O, B] {
       def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, B]): Machine[N, G, E] =
         self(new PlanS.FlatMap(s, f))

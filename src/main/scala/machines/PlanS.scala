@@ -29,7 +29,7 @@ private[machines] object PlanS {
     def stop: Machine[K, F, O] = p.stop
   }
 
-  final class Combine[K[_], F[_], O, A](s: PlanS[K, F, O, A], p: Plan[K, F, O, A])
+  final class OrElse[K[_], F[_], O, A](s: PlanS[K, F, O, A], p: Plan[K, F, O, A])
     extends PlanS[K, F, O, A] {
     def done(a: A): Machine[K, F, O] = s.done(a)
 

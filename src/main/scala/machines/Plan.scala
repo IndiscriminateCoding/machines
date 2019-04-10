@@ -29,9 +29,9 @@ object Plan {
         self(new PlanS.LiftMap(s, f))
     }
 
-    def combine(p: Plan[K, F, O, A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
+    def orElse(p: Plan[K, F, O, A]): Plan[K, F, O, A] = new Plan[K, F, O, A] {
       def apply[N[a] >: K[a], G[a] >: F[a], E >: O](s: PlanS[N, G, E, A]): Machine[N, G, E] =
-        self(new PlanS.Combine(s, p))
+        self(new PlanS.OrElse(s, p))
     }
   }
 

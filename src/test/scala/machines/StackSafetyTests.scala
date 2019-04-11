@@ -1,15 +1,15 @@
 package machines
 
 import cats._
-import cats.evidence.Is
 import machines.Machine._
+import machines.descriptor.Is
 import org.scalatest.FlatSpec
 
 class StackSafetyTests extends FlatSpec {
   val length: Int = 1000 * 1000
 
   it should "allow recursion when constructing Machines" in {
-    def stream[F[_], K[_]](n: Int): Machine[K, F, Option[Int]] =
+    def stream[F[_], K[_]](n: Int): Machine[F, K, Option[Int]] =
       if (n > 0) Emit(Some(1), Emit(None, Shift(stream(n - 1))))
       else Stop
 
@@ -19,7 +19,7 @@ class StackSafetyTests extends FlatSpec {
   }
 
   it should "produce stack-safe Machine" in {
-    def emit(from: Int): Plan[Int Is ?, Eval, Int, Unit] = (from match {
+    def emit(from: Int): Plan[Eval, Int Is ?, Int, Unit] = (from match {
       case n if n > 0 => Plan.emit(n + 42)
       case _ => Plan.stop
     })

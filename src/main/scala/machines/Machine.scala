@@ -8,7 +8,7 @@ import scala.collection.generic.CanBuild
 sealed trait Machine[+K[_], +F[_], +O] {
   final def map[A](f: O => A): Machine[K, F, A] = this match {
     case Stop => Stop
-    case e: Emit[K, F, O] => Emit(f(e.h), e.t.map(f)) // TODO: stack safety
+    case Emit(h, t) => Emit(f(h), t.map(f)) // TODO: stack safety
     case a: Await[K, F, O] => Await(a.await, a(_: a.Z).map(f), a.stop.map(f))
     case e: Effect[K, F, O] => Effect(e.effect, e(_: e.Z).map(f))
     case s: Shift[K, F, O] => Shift(s().map(f))
@@ -19,7 +19,7 @@ object Machine {
   implicit class MachineOps[K[_], F[_], O](private val self: Machine[K, F, O]) extends AnyVal {
     final def run_(implicit F: Monad[F]): F[Unit] = self match {
       case Stop => F.unit
-      case e: Emit[K, F, O] => e.t.run_
+      case Emit(_, t) => t.run_
       case a: Await[K, F, O] => a.stop.run_
       case e: Effect[K, F, O] => F.flatMap(e.effect)(z => e(z).run_)
       case s: Shift[K, F, O] => s().run_
@@ -27,7 +27,7 @@ object Machine {
 
     final def foldLeft[A](acc: A)(f: (A, O) => A)(implicit F: Monad[F]): F[A] = self match {
       case Stop => F.pure(acc)
-      case e: Emit[K, F, O] => e.t.foldLeft(f(acc, e.h))(f)
+      case Emit(h, t) => t.foldLeft(f(acc, h))(f)
       case a: Await[K, F, O] => a.stop.foldLeft(acc)(f)
       case e: Effect[K, F, O] => F.flatMap(e.effect)(z => e(z).foldLeft(acc)(f))
       case s: Shift[K, F, O] => s().foldLeft(acc)(f)
@@ -35,7 +35,7 @@ object Machine {
 
     final def foldLeftM[A](acc: A)(f: (A, O) => F[A])(implicit F: Monad[F]): F[A] = self match {
       case Stop => F.pure(acc)
-      case e: Emit[K, F, O] => F.flatMap(f(acc, e.h))(a => e.t.foldLeftM(a)(f))
+      case Emit(h, t) => F.flatMap(f(acc, h))(a => t.foldLeftM(a)(f))
       case a: Await[K, F, O] => a.stop.foldLeftM(acc)(f)
       case e: Effect[K, F, O] => F.flatMap(e.effect)(z => e(z).foldLeftM(acc)(f))
       case s: Shift[K, F, O] => s().foldLeftM(acc)(f)
@@ -57,7 +57,13 @@ object Machine {
 
   final class Emit[+K[_], +F[_], +O](val h: O, val t: Machine[K, F, O]) extends Machine[K, F, O]
   object Emit {
-    @inline def apply[K[_], F[_], O](h: O, t: Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
+    def apply[K[_], F[_], O](h: O, t: Machine[K, F, O]): Emit[K, F, O] = new Emit(h, t)
+
+    def unapply[K[_], F[_], O](m: Machine[K, F, O]): Option[(O, Machine[K, F, O])] =
+      m match {
+        case emit: Emit[K, F, O] => Some(emit.h -> emit.t)
+        case _ => None
+      }
   }
 
   sealed trait Await[+K[_], +F[_], +O] extends Machine[K, F, O] {
@@ -70,7 +76,7 @@ object Machine {
     def stop: Machine[K, F, O]
   }
   object Await {
-    @inline def apply[E, K[_], F[_], O](
+    def apply[E, K[_], F[_], O](
       z: K[E],
       e: E => Machine[K, F, O],
       f: Machine[K, F, O]
@@ -92,7 +98,7 @@ object Machine {
     def apply(z: Z): Machine[K, F, O]
   }
   object Effect {
-    @inline def apply[E, K[_], F[_], O](z: F[E], e: E => Machine[K, F, O]): Effect[K, F, O] =
+    def apply[E, K[_], F[_], O](z: F[E], e: E => Machine[K, F, O]): Effect[K, F, O] =
       new Effect[K, F, O] {
         type Z = E
 
@@ -106,9 +112,8 @@ object Machine {
     def apply(): Machine[K, F, O]
   }
   object Shift {
-    @inline def apply[K[_], F[_], O](@inline m: => Machine[K, F, O]): Shift[K, F, O] =
-      new Shift[K, F, O] {
-        def apply(): Machine[K, F, O] = m
-      }
+    def apply[K[_], F[_], O](m: => Machine[K, F, O]): Shift[K, F, O] = new Shift[K, F, O] {
+      def apply(): Machine[K, F, O] = m
+    }
   }
 }

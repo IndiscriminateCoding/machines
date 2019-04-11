@@ -14,7 +14,7 @@ sealed trait Plan[+K[_], +F[_], +O, +A] { self =>
 
   final def construct: Machine[K, F, O] = apply(new PlanS.Construct(Stop))
 
-  final def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(repeatedly))
+  final def repeatedly: Machine[K, F, O] = apply(new PlanS.Construct(Shift(repeatedly)))
 }
 
 object Plan {

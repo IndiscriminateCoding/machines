@@ -36,8 +36,8 @@ private[machines] object PlanS {
     val stop: Machine[K, F, O] = Shift(p(s))
   }
 
-  final class Construct[K[_], F[_], O, A](tail: => Machine[K, F, O]) extends PlanS[K, F, O, A] {
-    def done(a: A): Machine[K, F, O] = Shift(tail)
+  final class Construct[K[_], F[_], O, A](tail: Machine[K, F, O]) extends PlanS[K, F, O, A] {
+    def done(a: A): Machine[K, F, O] = tail
 
     val stop: Machine[K, F, O] = Stop
   }

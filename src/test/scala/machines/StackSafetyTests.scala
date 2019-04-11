@@ -2,21 +2,31 @@ package machines
 
 import cats._
 import cats.evidence.Is
+import machines.Machine._
 import org.scalatest.FlatSpec
 
-class PlanSpec extends FlatSpec {
+class StackSafetyTests extends FlatSpec {
+  val length: Int = 1000 * 1000
+
+  it should "allow recursion when constructing Machines" in {
+    def stream[F[_], K[_]](n: Int): Machine[K, F, Option[Int]] =
+      if (n > 0) Emit(Some(1), Emit(None, Shift(stream(n - 1))))
+      else Stop
+
+    stream[Eval, Int Is ?](length)
+      .run_
+      .value
+  }
+
   it should "produce stack-safe Machine" in {
     def emit(from: Int): Plan[Int Is ?, Eval, Int, Unit] = (from match {
       case n if n > 0 => Plan.emit(n + 42)
       case _ => Plan.stop
     })
       .flatMap(Plan.pure)
-      .flatMap(Plan.pure)
-      .flatMap(Plan.pure)
-      .flatMap(Plan.pure)
       .flatMap(_ => emit(from - 1))
 
-    val machine = emit(1000 * 1000).construct
+    val machine = emit(length).construct
     var res = 0
     res = machine
       .foldLeft(0)((a, n) => n + a)
@@ -36,13 +46,13 @@ class PlanSpec extends FlatSpec {
     })
 
     val plan = act flatMap {
-      case n if n < 1000 * 1000 => Plan.emit(n.toString)
+      case n if n < length => Plan.emit(n.toString)
       case _ => Plan.stop
     }
 
     plan
       .repeatedly
-      .map(s => Eval.always(System.err.println(s)))
+      .map(identity)
       .run_
       .value
   }
@@ -51,7 +61,7 @@ class PlanSpec extends FlatSpec {
     var cnt = 0
     val act = Eval.always {
       cnt += 1
-      if (cnt < 1000 * 1000) Some(cnt.toString)
+      if (cnt < length) Some(cnt.toString)
       else None
     }
 
@@ -59,7 +69,7 @@ class PlanSpec extends FlatSpec {
 
     plan
       .construct
-      .map(s => Eval.always(System.err.println(s)))
+      .map(identity)
       .run_
       .value
   }

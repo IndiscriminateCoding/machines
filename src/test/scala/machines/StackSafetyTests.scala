@@ -82,6 +82,7 @@ class StackSafetyTests extends FlatSpec with Matchers {
       .repeatedly
       .through(Process.take(len))
       .through(Process.echo)
+      .through(Process.drop(123))
       .through(Process.filter(_ => true))
       .run_
       .value

@@ -38,4 +38,8 @@ object Process {
   def take[F[_], A](n: Int): Process[F, A, A] =
     if (n <= 0) Stop
     else Await(Is.refl, (x: A) => Emit(x, take(n - 1)), Stop)
+
+  def drop[F[_], A](n: Int): Process[F, A, A] =
+    if (n <= 0) echo
+    else Await(Is.refl, (_: A) => drop(n - 1), Stop)
 }

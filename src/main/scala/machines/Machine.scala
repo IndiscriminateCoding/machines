@@ -51,6 +51,8 @@ object Machine {
     final def toList(implicit F: Monad[F]): F[List[O]] = to[List]
 
     final def toVector(implicit F: Monad[F]): F[Vector[O]] = to[Vector]
+
+    final def through[U](p: Process[F, O, U]): Machine[F, K, U] = Process.compose(self, p)
   }
 
   object Stop extends Machine[Nothing, Nothing, Nothing]

@@ -22,16 +22,20 @@ object Process {
     case shift: Shift[F, A Is ?, B] => Shift(compose(m, shift()))
   }
 
-  def echo[F[_], A]: Process[F, A, A] = Await(Is.refl, (x: A) => Emit(x, Shift(echo)), Stop)
+  def echo[F[_], A]: Process[F, A, A] = Await(Is.refl, (x: A) => Emit(x, echo), Stop)
 
   def filter[F[_], A](f: A => Boolean): Process[F, A, A] = Await(
     Is.refl,
     (x: A) => {
-      val tail = Shift(filter(f))
+      val tail = filter(f)
 
       if (f(x)) Emit(x, tail)
       else tail
     },
     Stop
   )
+
+  def take[F[_], A](n: Int): Process[F, A, A] =
+    if (n <= 0) Stop
+    else Await(Is.refl, (x: A) => Emit(x, take(n - 1)), Stop)
 }

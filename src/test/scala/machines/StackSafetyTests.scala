@@ -3,17 +3,17 @@ package machines
 import cats._
 import machines.Machine._
 import machines.descriptor.Is
-import org.scalatest.FlatSpec
+import org.scalatest.{ FlatSpec, Matchers }
 
-class StackSafetyTests extends FlatSpec {
-  val length: Int = 1000 * 1000
+class StackSafetyTests extends FlatSpec with Matchers {
+  val len: Int = 1000 * 1000
 
   it should "allow recursion when constructing Machines" in {
     def stream[F[_], K[_]](n: Int): Machine[F, K, Option[Int]] =
       if (n > 0) Emit(Some(1), Emit(None, Shift(stream(n - 1))))
       else Stop
 
-    stream[Eval, Int Is ?](length)
+    stream[Eval, Int Is ?](len)
       .run_
       .value
   }
@@ -26,7 +26,7 @@ class StackSafetyTests extends FlatSpec {
       .flatMap(Plan.pure)
       .flatMap(_ => emit(from - 1))
 
-    val machine = emit(length).construct
+    val machine = emit(len).construct
     var res = 0
     res = machine
       .foldLeft(0)((a, n) => n + a)
@@ -46,7 +46,7 @@ class StackSafetyTests extends FlatSpec {
     })
 
     val plan = act flatMap {
-      case n if n < length => Plan.emit(n.toString)
+      case n if n < len => Plan.emit(n.toString)
       case _ => Plan.stop
     }
 
@@ -61,7 +61,7 @@ class StackSafetyTests extends FlatSpec {
     var cnt = 0
     val act = Eval.always {
       cnt += 1
-      if (cnt < length) Some(cnt.toString)
+      if (cnt < len) Some(cnt.toString)
       else None
     }
 
@@ -72,5 +72,20 @@ class StackSafetyTests extends FlatSpec {
       .map(identity)
       .run_
       .value
+  }
+
+  it should "be stack-safe to use various Process functions" in {
+    var cnt = 0
+    val act = Eval.always { cnt += 1 }
+
+    (for { _ <- Plan.lift(act); _ <- Plan.emit(()) } yield ())
+      .repeatedly
+      .through(Process.take(len))
+      .through(Process.echo)
+      .through(Process.filter(_ => true))
+      .run_
+      .value
+
+    cnt shouldBe len
   }
 }

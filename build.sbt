@@ -1,4 +1,4 @@
-organization := "machines"
+organization := "com.github.IndiscriminateCoding"
 name := "machines"
 scalaVersion := "2.12.8"
 scalacOptions ++= Seq(

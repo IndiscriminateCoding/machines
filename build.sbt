@@ -1,6 +1,6 @@
 organization := "com.github.IndiscriminateCoding"
 name := "machines"
-scalaVersion := "2.12.8"
+crossScalaVersions := Seq("2.12.8")
 scalacOptions ++= Seq(
   "-language:higherKinds",
   "-Ypartial-unification"

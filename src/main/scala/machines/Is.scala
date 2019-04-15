@@ -1,4 +1,4 @@
-package machines.descriptor
+package machines
 
 import cats.arrow.Category
 

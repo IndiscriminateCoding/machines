@@ -1,7 +1,6 @@
 package machines
 
 import machines.Machine._
-import machines.descriptor.Is
 
 object Process {
   private[machines] def compose[F[_], K[_], A, B](

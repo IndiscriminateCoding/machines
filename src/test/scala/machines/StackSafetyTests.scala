@@ -39,21 +39,11 @@ class StackSafetyTests extends FlatSpec with Matchers {
   }
 
   it should "keep stack-safety when using repeatedly" in {
-    var cnt = 0
-    val act = Plan.lift(Eval.always {
-      cnt += 1
-      cnt
-    })
-
-    val plan = act flatMap {
-      case n if n < len => Plan.emit(n.toString)
-      case _ => Plan.stop
-    }
-
-    plan
+    Plan.emit(1)
       .repeatedly
+      .through(Process.take(len))
       .map(identity)
-      .run_
+      .run_(implicitly[Monad[Eval]])
       .value
   }
 

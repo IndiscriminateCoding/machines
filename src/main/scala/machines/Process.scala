@@ -1,6 +1,7 @@
 package machines
 
 import machines.Machine._
+import machines.input.Is
 
 object Process {
   def echo[F[_], A]: Process[F, A, A] = Await(Is.refl, (x: A) => Emit(x, echo), Stop)

@@ -2,6 +2,7 @@ package machines
 
 import cats._
 import machines.Machine._
+import machines.input.Is
 import org.scalatest.{ FlatSpec, Matchers }
 
 class StackSafetyTests extends FlatSpec with Matchers {

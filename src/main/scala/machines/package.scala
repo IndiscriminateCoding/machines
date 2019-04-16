@@ -1,10 +1,12 @@
 import cats.Monad
 import machines.Machine._
+import machines.input.Is
 
 import scala.collection.generic.CanBuild
 
 package object machines {
   type Process[+F[_], -I, +O] = Machine[F, I Is ?, O]
+  type Tee[+F[_], -L, -R, +O] = Machine[F, input.T[L, R, ?], O]
 
   implicit class MachineOps[F[_], K[_], O](private val self: Machine[F, K, O]) extends AnyVal {
     final def run_(implicit F: Monad[F]): F[Unit] = self match {
